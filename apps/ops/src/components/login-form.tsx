@@ -1,4 +1,6 @@
-// Update your login-form.tsx with better error handling
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// Update your login-form.tsx
 "use client"
 
 import { useState } from "react"
@@ -18,22 +20,20 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Lock, AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Lock } from "lucide-react"
+import { OTPInput } from "@/components/otp-input"
+import { toast } from "sonner"
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const [step, setStep] = useState<"phone" | "otp">("phone")
   const [phone, setPhone] = useState("")
   const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState("")
-  const [errorType, setErrorType] = useState("")
+  const [resendLoading, setResendLoading] = useState(false)
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setMessage("")
-    setErrorType("")
 
     try {
       const res = await fetch("/api/auth/request-otp", {
@@ -45,23 +45,35 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       const data = await res.json()
       
       if (!res.ok) {
-        // Handle specific error types
+        // Handle specific error types with Sonner toasts
         if (data.errorType === "OTP_ALREADY_ACTIVE") {
-          setMessage("An OTP was recently sent. Please wait or try again shortly.")
+          toast.error("OTP Already Sent", {
+            description: "An OTP was recently sent. Please wait or try again shortly."
+          })
         } else if (data.errorType === "SENDER_ID_ERROR") {
-          setMessage("Service temporarily unavailable. Please try again later.")
+          toast.error("Service Unavailable", {
+            description: "Service temporarily unavailable. Please try again later."
+          })
+        } else if (data.errorType === "AUTH_CONFIG_ERROR" || data.errorType === "SERVICE_CONFIG_ERROR") {
+          toast.error("Configuration Error", {
+            description: "Service configuration error. Please contact support."
+          })
         } else {
-          setMessage(data.message || "Failed to send OTP")
+          toast.error("Failed to Send OTP", {
+            description: data.message || "Failed to send verification code"
+          })
         }
-        setErrorType(data.errorType)
         return
       }
       
       setStep("otp")
-      setMessage("Verification code sent successfully!")
+      toast.success("Verification Code Sent", {
+        description: "We've sent a 6-digit code to your phone number."
+      })
     } catch (err: any) {
-      setMessage(err.message || "Network error. Please check your connection.")
-      setErrorType("NETWORK_ERROR")
+      toast.error("Network Error", {
+        description: "Please check your internet connection and try again."
+      })
     } finally {
       setLoading(false)
     }
@@ -69,9 +81,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault()
+    
+    if (otp.length !== 6) {
+      toast.error("Invalid Code", {
+        description: "Please enter the complete 6-digit code."
+      })
+      return
+    }
+
     setLoading(true)
-    setMessage("")
-    setErrorType("")
 
     try {
       const res = await fetch("/api/auth/verify-otp", {
@@ -83,37 +101,52 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       const data = await res.json()
       
       if (!res.ok) {
-        // Handle specific verification errors
+        // Handle specific verification errors with Sonner toasts
         if (data.errorType === "INVALID_OTP") {
-          setMessage("Invalid code. Please check and try again.")
+          toast.error("Invalid Code", {
+            description: "The code you entered is incorrect. Please try again."
+          })
         } else if (data.errorType === "EXPIRED_OTP") {
-          setMessage("Code has expired. Please request a new one.")
+          toast.error("Code Expired", {
+            description: "This code has expired. Please request a new one."
+          })
         } else if (data.errorType === "MAX_ATTEMPTS_EXCEEDED") {
-          setMessage("Too many attempts. Please request a new code.")
+          toast.error("Too Many Attempts", {
+            description: "Too many failed attempts. Please request a new code."
+          })
         } else {
-          setMessage(data.message || "Verification failed")
+          toast.error("Verification Failed", {
+            description: data.message || "Unable to verify your code"
+          })
         }
-        setErrorType(data.errorType)
         return
       }
       
-      setMessage("Login successful! Redirecting...")
+      // Save token to localStorage/sessionStorage
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token)
+        sessionStorage.setItem('auth_token', data.token)
+      }
+      
+      toast.success("Login Successful", {
+        description: "Welcome back! Redirecting to your dashboard..."
+      })
+      
       // Redirect to dashboard or home page
       setTimeout(() => {
         window.location.href = "/"
-      }, 1000)
+      }, 1500)
     } catch (err: any) {
-      setMessage(err.message || "Network error during verification.")
-      setErrorType("NETWORK_ERROR")
+      toast.error("Network Error", {
+        description: "Please check your connection and try again."
+      })
     } finally {
       setLoading(false)
     }
   }
 
   async function handleResendOtp() {
-    setLoading(true)
-    setMessage("")
-    setErrorType("")
+    setResendLoading(true)
 
     try {
       const res = await fetch("/api/auth/resend-otp", {
@@ -126,20 +159,29 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       
       if (!res.ok) {
         if (data.errorType === "RESEND_COOLDOWN") {
-          setMessage("Please wait before requesting a new code.")
+          toast.error("Please Wait", {
+            description: "Please wait before requesting a new code."
+          })
         } else {
-          setMessage(data.message || "Failed to resend OTP")
+          toast.error("Resend Failed", {
+            description: data.message || "Failed to resend verification code"
+          })
         }
-        setErrorType(data.errorType)
         return
       }
       
-      setMessage("New verification code sent!")
+      // Clear previous OTP when resending
+      setOtp("")
+      
+      toast.success("New Code Sent", {
+        description: "We've sent a new verification code to your phone."
+      })
     } catch (err: any) {
-      setMessage(err.message || "Failed to resend code.")
-      setErrorType("NETWORK_ERROR")
+      toast.error("Network Error", {
+        description: "Failed to resend code. Please try again."
+      })
     } finally {
-      setLoading(false)
+      setResendLoading(false)
     }
   }
 
@@ -174,7 +216,14 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                 </Field>
                 <Field>
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Sending..." : "Send Verification Code"}
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Verification Code"
+                    )}
                   </Button>
                 </Field>
               </FieldGroup>
@@ -183,60 +232,57 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
             <form onSubmit={handleVerifyOtp}>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="otp">Enter Verification Code</FieldLabel>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="Enter 6-digit code"
+                  <FieldLabel>Enter Verification Code</FieldLabel>
+                  <OTPInput
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    required
+                    onChange={setOtp}
+                    length={6}
                     disabled={loading}
-                    maxLength={6}
                   />
-                  <FieldDescription>
-                    Enter the code sent to {phone}
+                  <FieldDescription className="text-center mt-4">
+                    Enter the 6-digit code sent to {phone}
                   </FieldDescription>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Verifying..." : "Verify Code"}
+                  <Button type="submit" disabled={loading || otp.length !== 6} className="w-full">
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Verifying...
+                      </>
+                    ) : (
+                      "Verify Code"
+                    )}
                   </Button>
                 </Field>
-                <p className="text-sm text-center text-muted-foreground mt-2">
-                  Didn&apos;t receive code?{" "}
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={loading}
-                    className="underline underline-offset-4 hover:text-primary disabled:opacity-50"
-                  >
-                    Resend
-                  </button>
-                </p>
-                <p className="text-sm text-center text-muted-foreground">
-                  Or{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep("phone")
-                      setMessage("")
-                      setErrorType("")
-                    }}
-                    className="underline underline-offset-4 hover:text-primary"
-                  >
-                    change phone number
-                  </button>
-                </p>
+                <div className="flex flex-col gap-2 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Didn&apos;t receive code?{" "}
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendLoading || loading}
+                      className="underline underline-offset-4 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resendLoading ? "Resending..." : "Resend"}
+                    </button>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Or{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep("phone")
+                        setOtp("") // Clear OTP when going back
+                      }}
+                      className="underline underline-offset-4 hover:text-primary"
+                    >
+                      change phone number
+                    </button>
+                  </p>
+                </div>
               </FieldGroup>
             </form>
-          )}
-
-          {message && (
-            <Alert variant={errorType ? "destructive" : "default"} className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
           )}
         </CardContent>
       </Card>

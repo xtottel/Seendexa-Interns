@@ -21,8 +21,19 @@ interface OTPResponse {
 
 export class OTPService {
   private static readonly API_BASE = "https://api.sendexa.co/v1/otp";
-  private static readonly API_KEY = "c21zX2RmZGEwYTYwOjM2YjdjNWNhZDdkOTUxMjQ=";
+  private static readonly API_KEY = process.env.SENDEXA_API_KEY;
+  private static readonly API_SECRET = process.env.SENDEXA_API_SECRET;
   private static readonly SENDER_ID = "Sendexa";
+
+  private static getAuthHeader(): string {
+    if (!this.API_KEY || !this.API_SECRET) {
+      throw new Error("Sendexa API credentials not configured");
+    }
+    
+    // Create Basic Auth token: base64(api_key:api_secret)
+    const credentials = `${this.API_KEY}:${this.API_SECRET}`;
+    return `Basic ${Buffer.from(credentials).toString('base64')}`;
+  }
 
   static async sendOTP(phone: string, metadata?: Record<string, any>): Promise<OTPResponse> {
     const payload: RequestOTPParams = {
@@ -47,7 +58,7 @@ export class OTPService {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": this.API_KEY!,
+        "Authorization": this.getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -71,7 +82,7 @@ export class OTPService {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": this.API_KEY!,
+        "Authorization": this.getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -94,7 +105,7 @@ export class OTPService {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": this.API_KEY!,
+        "Authorization": this.getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
