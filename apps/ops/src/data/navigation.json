@@ -2,15 +2,11 @@
   "navMain": [
     {
       "title": "Dashboard",
-      "url": "/home"
+      "url": "/"
     },
     {
       "title": "Clients",
-      "url": "/clients",
-      "items": [
-        { "title": "All Clients", "url": "/clients/all" },
-        { "title": "Pending Clients", "url": "/clients/pending" }
-      ]
+      "url": "/clients"
     },
     {
       "title": "Sender IDs",

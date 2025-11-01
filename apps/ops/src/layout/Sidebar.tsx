@@ -83,7 +83,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 asChild
                 className="group hover:bg-primary/10 transition-all duration-300 px-5"
               >
-                <Link href="/home" className="relative overflow-hidden">
+                <Link href="/" className="relative overflow-hidden">
                    <Image
                     src="https://cdn.sendexa.co/images/logo/exaweb.png"
                     alt="Sendexa Logo"
