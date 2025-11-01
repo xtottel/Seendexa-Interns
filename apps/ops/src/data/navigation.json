@@ -1,0 +1,41 @@
+{
+  "navMain": [
+    {
+      "title": "Dashboard",
+      "url": "/home"
+    },
+    {
+      "title": "Clients",
+      "url": "/clients",
+      "items": [
+        { "title": "All Clients", "url": "/clients/all" },
+        { "title": "Pending Clients", "url": "/clients/pending" }
+      ]
+    },
+    {
+      "title": "Sender IDs",
+      "url": "/sender-ids",
+      "items": [
+        { "title": "All Sender IDs", "url": "/sender-ids/all" },
+        { "title": "Approvals", "url": "/sender-ids/approvals" }
+      ]
+    },
+    {
+      "title": "Monitoring",
+      "url": "/monitoring",
+      "items": [
+        { "title": "SMS Delivery", "url": "/monitoring/sms" },
+        { "title": "OTP Delivery", "url": "/monitoring/otp" },
+        { "title": "API Health", "url": "/monitoring/api" }
+      ]
+    },
+    {
+      "title": "Reports",
+      "url": "/reports",
+      "items": [
+        { "title": "Service Reports", "url": "/reports/services" },
+        { "title": "Client Reports", "url": "/reports/clients" }
+      ]
+    }
+  ]
+}

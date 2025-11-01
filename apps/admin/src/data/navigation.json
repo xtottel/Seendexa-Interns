@@ -1,0 +1,40 @@
+{
+  "navMain": [
+    {
+      "title": "Overview",
+      "url": "/overview"
+    },
+    {
+      "title": "Clients",
+      "url": "/users",
+      "items": [
+        { "title": "Businesses", "url": "/users/businesses" },
+        { "title": "Admins", "url": "/users/admins" }
+      ]
+    },
+    {
+      "title": "Credits",
+      "url": "/credits",
+      "items": [
+        { "title": "Manage Credits", "url": "/credits/manage" },
+        { "title": "Transactions", "url": "/credits/transactions" }
+      ]
+    },
+    {
+      "title": "Services",
+      "url": "/services",
+      "items": [
+        { "title": "SMS", "url": "/services/sms" },
+        { "title": "OTP", "url": "/services/otp" }
+      ]
+    },
+    {
+      "title": "Reports",
+      "url": "/reports",
+      "items": [
+        { "title": "Usage Reports", "url": "/reports/usage" },
+        { "title": "System Logs", "url": "/reports/logs" }
+      ]
+    }
+  ]
+}
