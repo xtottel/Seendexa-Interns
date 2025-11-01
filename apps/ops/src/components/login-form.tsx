@@ -1,3 +1,4 @@
+// Update your login-form.tsx with better error handling
 "use client"
 
 import { useState } from "react"
@@ -17,7 +18,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Lock } from "lucide-react"
+import { Lock, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const [step, setStep] = useState<"phone" | "otp">("phone")
@@ -25,26 +27,41 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
+  const [errorType, setErrorType] = useState("")
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setMessage("")
+    setErrorType("")
 
     try {
-      const res = await fetch("/api/login/request-otp", {
+      const res = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to send OTP")
+      
+      if (!res.ok) {
+        // Handle specific error types
+        if (data.errorType === "OTP_ALREADY_ACTIVE") {
+          setMessage("An OTP was recently sent. Please wait or try again shortly.")
+        } else if (data.errorType === "SENDER_ID_ERROR") {
+          setMessage("Service temporarily unavailable. Please try again later.")
+        } else {
+          setMessage(data.message || "Failed to send OTP")
+        }
+        setErrorType(data.errorType)
+        return
+      }
+      
       setStep("otp")
-      setMessage("OTP sent successfully!")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setMessage("Verification code sent successfully!")
     } catch (err: any) {
-      setMessage(err.message)
+      setMessage(err.message || "Network error. Please check your connection.")
+      setErrorType("NETWORK_ERROR")
     } finally {
       setLoading(false)
     }
@@ -54,21 +71,73 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     e.preventDefault()
     setLoading(true)
     setMessage("")
+    setErrorType("")
 
     try {
-      const res = await fetch("/api/login/verify-otp", {
+      const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Invalid OTP")
+      
+      if (!res.ok) {
+        // Handle specific verification errors
+        if (data.errorType === "INVALID_OTP") {
+          setMessage("Invalid code. Please check and try again.")
+        } else if (data.errorType === "EXPIRED_OTP") {
+          setMessage("Code has expired. Please request a new one.")
+        } else if (data.errorType === "MAX_ATTEMPTS_EXCEEDED") {
+          setMessage("Too many attempts. Please request a new code.")
+        } else {
+          setMessage(data.message || "Verification failed")
+        }
+        setErrorType(data.errorType)
+        return
+      }
+      
       setMessage("Login successful! Redirecting...")
-      window.location.href = "/home"
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Redirect to dashboard or home page
+      setTimeout(() => {
+        window.location.href = "/"
+      }, 1000)
     } catch (err: any) {
-      setMessage(err.message)
+      setMessage(err.message || "Network error during verification.")
+      setErrorType("NETWORK_ERROR")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResendOtp() {
+    setLoading(true)
+    setMessage("")
+    setErrorType("")
+
+    try {
+      const res = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      })
+
+      const data = await res.json()
+      
+      if (!res.ok) {
+        if (data.errorType === "RESEND_COOLDOWN") {
+          setMessage("Please wait before requesting a new code.")
+        } else {
+          setMessage(data.message || "Failed to resend OTP")
+        }
+        setErrorType(data.errorType)
+        return
+      }
+      
+      setMessage("New verification code sent!")
+    } catch (err: any) {
+      setMessage(err.message || "Failed to resend code.")
+      setErrorType("NETWORK_ERROR")
     } finally {
       setLoading(false)
     }
@@ -93,15 +162,19 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+233501234567"
+                    placeholder="0555539152"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
+                    disabled={loading}
                   />
+                  <FieldDescription>
+                    Enter your registered phone number
+                  </FieldDescription>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Sending..." : "Send OTP"}
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Sending..." : "Send Verification Code"}
                   </Button>
                 </Field>
               </FieldGroup>
@@ -110,29 +183,49 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
             <form onSubmit={handleVerifyOtp}>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="otp">Enter OTP</FieldLabel>
+                  <FieldLabel htmlFor="otp">Enter Verification Code</FieldLabel>
                   <Input
                     id="otp"
                     type="text"
                     placeholder="Enter 6-digit code"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                     required
+                    disabled={loading}
+                    maxLength={6}
                   />
+                  <FieldDescription>
+                    Enter the code sent to {phone}
+                  </FieldDescription>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Verifying..." : "Verify OTP"}
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Verifying..." : "Verify Code"}
                   </Button>
                 </Field>
                 <p className="text-sm text-center text-muted-foreground mt-2">
-                  Didn’t receive OTP?{" "}
+                  Didn&apos;t receive code?{" "}
                   <button
                     type="button"
-                    onClick={handleSendOtp}
-                    className="underline underline-offset-4 hover:text-primary"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    className="underline underline-offset-4 hover:text-primary disabled:opacity-50"
                   >
                     Resend
+                  </button>
+                </p>
+                <p className="text-sm text-center text-muted-foreground">
+                  Or{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("phone")
+                      setMessage("")
+                      setErrorType("")
+                    }}
+                    className="underline underline-offset-4 hover:text-primary"
+                  >
+                    change phone number
                   </button>
                 </p>
               </FieldGroup>
@@ -140,9 +233,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
           )}
 
           {message && (
-            <p className="text-center text-sm mt-4 text-muted-foreground">
-              {message}
-            </p>
+            <Alert variant={errorType ? "destructive" : "default"} className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>

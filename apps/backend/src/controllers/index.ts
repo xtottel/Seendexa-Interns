@@ -1,3 +1,0 @@
-
-export { authController } from './auth';
-

@@ -1,13 +1,14 @@
 // controllers/auth/index.ts
-import { login } from "./login.controller";
+import { requestOTP } from "./request-otp.controller";
+import { verifyOTP } from "./verify-otp.controller";
+import { resendOTP } from "./resend-otp.controller";
 import { refresh } from "./refresh.controller";
-import { logout, logoutAllSessions, logoutSession } from "./logout.controller";
-
+import { logout } from "./logout.controller";
 
 export const authController = {
-  login,
+  requestOTP,
+  verifyOTP,
+  resendOTP,
   refresh,
   logout,
-  logoutAllSessions,
-  logoutSession,
 };

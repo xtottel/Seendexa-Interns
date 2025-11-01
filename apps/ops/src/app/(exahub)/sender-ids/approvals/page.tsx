@@ -125,9 +125,9 @@ export default function PendingRequestsPage() {
       <Badge variant="outline">Not Submitted</Badge>;
   };
 
-  // const getStatusBadge = (status: string) => {
-  //   return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
-  // };
+  const getStatusBadge = (status: string) => {
+    return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
+  };
 
   const handleApprove = (request: any) => {
     console.log("Approve sender ID:", request.id);

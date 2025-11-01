@@ -1,36 +1,44 @@
-# dependencies (bun install)
-node_modules
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# output
-out
-dist
-*.tgz
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+/dist
 
-# code coverage
-coverage
-*.lcov
+# testing
+/coverage
 
-# logs
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+# next.js
+/.next/
+/out/
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+# .env
 .env.local
 
-# caches
-.eslintcache
-.cache
-*.tsbuildinfo
+# vercel
+.vercel
 
-# IntelliJ based IDEs
-.idea
+**/*.trace
+**/*.zip
+**/*.tar.gz
+**/*.tgz
+**/*.log
+package-lock.json
+**/*.bun
+# bun
+.bun.lock
 
-# Finder (MacOS) folder config
-.DS_Store
-
-/src/generated/prisma

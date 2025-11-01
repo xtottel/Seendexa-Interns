@@ -1,12 +1,11 @@
-// routes/index.ts
-import { Router } from 'express';
-import { authRoutes } from './auth';
+import { Elysia } from "elysia";
+import { authRoutes } from "./auth";
+import { userRoutes } from "./user";
+import { v1Routes } from "./v1";
 
-
-const express = require('express');
-const router = express.Router();
-
-router.use('/auth', authRoutes);
-
-
-export { router as apiRoutes }; 
+export const routes = new Elysia()
+  // define routes
+  .use(authRoutes)
+  .use(userRoutes)
+  .use(v1Routes);
+// .get("/", () => "Welcome to the API");
