@@ -68,7 +68,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.png",
-    shortcut: "/favicon-16x16.png",
+    shortcut: "/favicon.png",
     apple: "/apple-touch-icon.png",
     other: {
       rel: "mask-icon",

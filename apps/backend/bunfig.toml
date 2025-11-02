@@ -1,0 +1,23 @@
+# Bun Configuration File
+# https://bun.sh/docs/runtime/bunfig
+
+# Enable source maps for better debugging
+[run]
+source-map = true
+
+# Package installation settings
+[install]
+# Automatically install peer dependencies
+peer = true
+# Install dev dependencies
+dev = true
+# Use exact versions
+exact = false
+
+# Test configuration
+[test]
+# Test timeout in milliseconds
+timeout = 30000
+# Preload test files
+preload = ["./tests/setup.ts"]
+
