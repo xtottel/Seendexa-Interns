@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,  DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Filter, Download, Plus, CheckCircle, XCircle, Clock,  Mail } from "lucide-react";
+import { Search, MoreHorizontal, Filter, Download, CheckCircle, XCircle, Clock,  Mail } from "lucide-react";
 
 // Mock data based on your schema
 const mockSenderIds = [
@@ -163,10 +163,6 @@ export default function SenderIdsPage() {
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Sender ID
-          </Button>
         </div>
       </div>
 
@@ -276,10 +272,6 @@ export default function SenderIdsPage() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{senderId.business.name}</span>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        {senderId.business.email}
-                      </div>
                     </div>
                   </TableCell>
                   <TableCell>

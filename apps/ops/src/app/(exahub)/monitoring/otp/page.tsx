@@ -1,14 +1,14 @@
 // app/dashboard/operations/otp-history/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Filter, Download, Shield, Eye, RefreshCw, Building, MessageSquare, CreditCard, Activity, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Search, MoreHorizontal, Filter, Download, Shield, Eye, RefreshCw, Building,  CreditCard, Clock, CheckCircle, XCircle } from "lucide-react";
 
 // Mock data based on your OtpMessage schema
 const mockOtpMessages = [
@@ -144,7 +144,7 @@ export default function OtpHistoryPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [codeStatusFilter, setCodeStatusFilter] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
-  const [otpMessages, setOtpMessages] = useState(mockOtpMessages);
+  const [otpMessages] = useState(mockOtpMessages);
   const [isLoading, setIsLoading] = useState(false);
 
   const filteredMessages = otpMessages.filter(message => {
@@ -172,8 +172,8 @@ export default function OtpHistoryPage() {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'GHS',
+      // style: 'currency',
+      // currency: '',
     }).format(amount);
   };
 
@@ -451,13 +451,13 @@ export default function OtpHistoryPage() {
                 <TableHead>Code</TableHead>
                 <TableHead>Channel</TableHead>
                 <TableHead>Sender ID</TableHead>
-                <TableHead>Pin Type</TableHead>
+                {/* <TableHead>Pin Type</TableHead> */}
                 <TableHead>Attempts</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Code Status</TableHead>
                 <TableHead>Cost</TableHead>
                 <TableHead>Expires</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -466,10 +466,6 @@ export default function OtpHistoryPage() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{message.business.name}</span>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Building className="h-3 w-3" />
-                        {message.business.email}
-                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
@@ -486,9 +482,9 @@ export default function OtpHistoryPage() {
                       {message.sender?.name || "N/A"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     {getPinTypeBadge(message.pinType)}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <div className="text-center">
                       <span className={`font-medium ${
@@ -515,41 +511,7 @@ export default function OtpHistoryPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem 
-                            className="cursor-pointer"
-                            onClick={() => handleViewDetails(message)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          {message.status === 'failed' && (
-                            <DropdownMenuItem 
-                              className="cursor-pointer text-green-600"
-                              onClick={() => handleResendOtp(message)}
-                            >
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Resend OTP
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="cursor-pointer">
-                            Download Report
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
+                
                 </TableRow>
               ))}
             </TableBody>

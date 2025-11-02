@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Eye,  User, Mail, Phone, Building, CreditCard, Users, Filter, Download,  Activity, Ban, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Mail, Phone, Building, CreditCard, Users, Filter, Download,  Activity, Ban, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 // Enhanced mock data following your schema
@@ -227,10 +227,10 @@ export default function ClientsPage() {
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button>
+          {/* <Button>
             <User className="w-4 h-4 mr-2" />
             Add Client
-          </Button>
+          </Button> */}
         </div>
       </div>
 

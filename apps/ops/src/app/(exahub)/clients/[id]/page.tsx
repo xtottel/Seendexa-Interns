@@ -92,7 +92,7 @@ export default function ClientDetailPage() {
         <h2 className="text-2xl font-bold">Client Not Found</h2>
         <p className="text-muted-foreground mt-2">The client you&apos;re looking for doesn&apos;t exist.</p>
         <Button asChild className="mt-4">
-          <Link href="/clients/all">
+          <Link href="/clients">
             Back to Clients
           </Link>
         </Button>

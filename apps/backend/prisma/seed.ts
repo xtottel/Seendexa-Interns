@@ -27,11 +27,11 @@ async function main() {
   const hashedPassword = await bcrypt.hash('Busy@123', 12)
   
   const adminUser = await prisma.teamMember.upsert({
-    where: { phone: '+233551196764' },
+    where: { phone: '0551196764' },
     update: {},
     create: {
       fullName: 'Collins Vidzro',
-      phone: '+233551196764',
+      phone: '0551196764',
       email: 'ceo@sendexa.co',
       role: 'manager',
       password: hashedPassword,

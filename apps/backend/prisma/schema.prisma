@@ -1,4 +1,4 @@
-
+// schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,6 +6,537 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  firstName           String
+  lastName            String
+  email               String               @unique
+  phone               String
+  password            String
+  emailVerified       DateTime?
+  isActive            Boolean              @default(true)
+  lastActive          DateTime? // ADDED: Last active timestamp
+  lastLogin           DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  businessId          String
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  roleId              String
+  role                Role                 @relation(fields: [roleId], references: [id]) // FIXED: Added relation
+  accounts            Account[]
+  sessions            Session[]
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  authSessions        AuthSession[]
+  mfaSettings         MFASettings?
+  loginAttempts       LoginAttempt[]
+  sentInvitations     Invitation[] // Invitations sent by this user
+
+  @@index([email, isActive])
+  @@index([businessId])
+  @@map("users")
+}
+
+// NEW: Team Invitation Model
+model Invitation {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  email       String
+  roleId      String // Change from role: String
+  role        Role     @relation(fields: [roleId], references: [id]) // Add relation
+  invitedById String
+  invitedBy   User     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  token       String   @unique
+  status      String   @default("pending")
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, email])
+  @@index([token])
+  @@map("invitations")
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  permissions String[] // JSON array of permissions
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  users       User[]
+  invitations Invitation[] // ADDED: Invitations using this role
+
+  @@map("roles")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token, userId])
+  @@map("password_reset_tokens")
+}
+
+model OTP {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  type      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, type])
+  @@index([email, otp])
+  @@map("otps")
+}
+
+model AuthSession {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String    @unique
+  refreshToken String    @unique
+  deviceInfo   String?
+  ipAddress    String?
+  userAgent    String?
+  location     String?
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+
+  @@index([sessionToken])
+  @@index([refreshToken])
+  @@index([userId, revokedAt])
+  @@map("auth_sessions")
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  key         String    @unique
+  secret      String
+  permissions String[] // JSON array of permissions
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  isActive    Boolean   @default(true)
+
+  @@map("api_keys")
+}
+
+model Webhook {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  url        String
+  events     String[] // JSON array of events to listen for
+  secret     String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("webhooks")
+}
+
+model MFASettings {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method      String   @default("NONE")
+  secret      String?
+  backupCodes String[]
+  isEnabled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("mfa_settings")
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  ipAddress String
+  userAgent String?
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([ipAddress, createdAt])
+  @@index([email, createdAt])
+  @@map("login_attempts")
+}
+
+model BusinessSettings {
+  id               String   @id @default(cuid())
+  businessId       String   @unique
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  securityLevel    String   @default("STANDARD") // STANDARD, ENHANCED, STRICT
+  mfaRequired      Boolean  @default(false)
+  sessionTimeout   Int      @default(1440) // minutes
+  maxLoginAttempts Int      @default(5)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("business_settings")
+}
+
+// SMS and Messaging Models
+model SenderId {
+  id            String       @id @default(cuid())
+  businessId    String
+  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name          String
+  status        String       @default("pending") // pending, approved, rejected
+  atWhitelisted String       @default("Not Submitted") // Submitted, Not Submitted
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  smsMessages   SmsMessage[]
+  OtpMessages   OtpMessage[]
+  bulkSends     BulkSend[] // ADDED: Reverse relation for BulkSend
+
+  @@unique([businessId, name])
+  @@map("sender_ids")
+}
+
+model Template {
+  id          String       @id @default(cuid())
+  businessId  String
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  content     String
+  category    String
+  variables   String[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  smsMessages SmsMessage[]
+  bulkSends   BulkSend[] // ADDED: Reverse relation for BulkSend
+
+  @@map("templates")
+}
+
+model SmsMessage {
+  id           String    @id @default(cuid())
+  businessId   String
+  business     Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  recipient    String
+  message      String
+  type         String // SMS API, Outgoing, SMS API RESEND, etc.
+  status       String // delivered, pending, failed, resent_delivered, resent_failed
+  cost         Float
+  senderId     String?
+  sender       SenderId? @relation(fields: [senderId], references: [id])
+  templateId   String?
+  template     Template? @relation(fields: [templateId], references: [id])
+  messageId    String? // Internal message ID
+  externalId   String? // Provider's external ID (e.g., from Nalo) or resend tracking
+  errorCode    String? // Error code from provider
+  errorMessage String? // Error message from provider or resend info
+  bulkSendId   String? // For bulk sends
+  bulkSend     BulkSend? @relation(fields: [bulkSendId], references: [id])
+  
+  // Resend fields (optional but recommended)
+  originalMessageId String?   @map("original_message_id") // The original messageId that we're resending
+  parentSmsId      String?    @map("parent_sms_id")       // Reference to the original SMS record
+  resentAt         DateTime?  @map("resent_at")           // When this was resent
+  
+  // Self-relation for resend tracking
+  parentSms        SmsMessage? @relation("SmsMessageResend", fields: [parentSmsId], references: [id])
+  resendAttempts   SmsMessage[] @relation("SmsMessageResend")
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([businessId, status])
+  @@index([recipient])
+  @@index([createdAt])
+  @@index([messageId])
+  @@index([externalId])
+  @@index([parentSmsId]) // For resend queries
+  @@map("sms_messages")
+}
+
+model BulkSend {
+  id              String       @id @default(cuid())
+  businessId      String
+  business        Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  totalRecipients Int
+  successfulCount Int          @default(0)
+  failedCount     Int          @default(0)
+  message         String
+  senderId        String?
+  sender          SenderId?    @relation(fields: [senderId], references: [id])
+  templateId      String?
+  template        Template?    @relation(fields: [templateId], references: [id])
+  totalCost       Float
+  status          String // PROCESSING, COMPLETED, FAILED
+  smsMessages     SmsMessage[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([businessId, status])
+  @@index([createdAt])
+  @@map("bulk_sends")
+}
+
+
+model OtpMessage {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  phone      String
+  code       String
+  status     String // delivered, failed, pending
+  codeStatus String // active, expired, used, blocked
+  cost       Float
+  channel    String // SMS, WhatsApp, etc.
+  senderId   String?
+  sender     SenderId? @relation(fields: [senderId], references: [id])
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  
+  // New fields for enhanced OTP
+  pinLength  Int       @default(6)
+  pinType    String    @default("NUMERIC") // NUMERIC, ALPHANUMERIC, ALPHABETIC
+  template   String?   // Custom message template
+  expiryAmount Int     @default(10)
+  expiryDuration String @default("minutes") // minutes, hours
+  validationAttempts Int @default(0)
+  maxValidationAttempts Int @default(3)
+  metadata   Json?     // Additional custom data
+
+  @@index([businessId, status])
+  @@index([phone])
+  @@index([createdAt])
+  @@map("otp_messages")
+}
+
+// Contacts and Groups
+model ContactGroup {
+  id          String    @id @default(cuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  contacts    Contact[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([businessId, name])
+  @@map("contact_groups")
+}
+
+model Contact {
+  id          String       @id @default(cuid())
+  groupId     String
+  group       ContactGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name        String
+  email       String?
+  phone       String
+  dateOfBirth DateTime?
+  address     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([groupId])
+  @@index([phone])
+  @@map("contacts")
+}
+
+// Add to your existing schema.prisma
+
+
+enum AccountType {
+  SMS
+  WALLET
+}
+
+model BusinessAccount {
+  id           String              @id @default(cuid())
+  businessId   String
+  business     Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  type         AccountType         @default(WALLET) // Changed default to WALLET
+  balance      Float               @default(0)
+  currency     String              @default("GHS")
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  transactions CreditTransaction[]
+
+  @@unique([businessId, type])
+  @@map("business_accounts")
+}
+
+model Business {
+  id                   String                @id @default(cuid())
+  name                 String                @unique
+  phone                String
+  address              String?
+  businessType         String?
+  businessSector       String?
+  description          String?
+  email                String?
+  website              String?
+  logo                 String?
+  businessCertificate  String?
+  isActive             Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  users                User[]
+  apiKeys              ApiKey[]
+  webhooks             Webhook[]
+  settings             BusinessSettings?
+  senderIds            SenderId[]
+  templates            Template[]
+  contactGroups        ContactGroup[]
+  smsMessages          SmsMessage[]
+  otpMessages          OtpMessage[]
+  invoices             Invoice[]
+  credits              CreditTransaction[]
+  smsAnalytics         SmsAnalytics[]
+  otpAnalytics         OtpAnalytics[]
+  networkDistributions NetworkDistribution[]
+  invitations          Invitation[]
+  accounts             BusinessAccount[] // ADDED: Relation to BusinessAccount
+  bulkSends            BulkSend[] // ADDED: Reverse relation for BulkSend
+
+  @@map("businesses")
+}
+
+
+// Also update the CreditTransaction model relation
+model CreditTransaction {
+  id          String          @id @default(cuid())
+  businessId  String
+  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     BusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade) // Added onDelete: Cascade
+  type        String // purchase, usage, refund, transfer
+  amount      Float
+  balance     Float
+  description String?
+  referenceId String? // For linking to specific services
+  createdAt   DateTime        @default(now())
+
+  @@index([businessId, accountId, createdAt])
+  @@map("credit_transactions")
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoiceId   String   @unique
+  date        DateTime
+  amount      Float
+  status      String // paid, pending, failed
+  type        String // SMS Credits, etc.
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([businessId, status])
+  @@index([invoiceId])
+  @@map("invoices")
+}
+
+// Analytics and Reports
+model SmsAnalytics {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  period     String // daily, weekly, monthly
+  date       DateTime
+  sent       Int
+  delivered  Int
+  failed     Int
+  cost       Float
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, period, date])
+  @@map("sms_analytics")
+}
+
+model OtpAnalytics {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  period     String // daily, weekly, monthly
+  date       DateTime
+  sent       Int
+  verified   Int
+  failed     Int
+  cost       Float
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, period, date])
+  @@map("otp_analytics")
+}
+
+model NetworkDistribution {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  period     String // daily, weekly, monthly
+  date       DateTime
+  mtn        Int
+  telecel    Int
+  at         Int
+  other      Int
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, period, date])
+  @@map("network_distributions")
 }
 
 model Department {
