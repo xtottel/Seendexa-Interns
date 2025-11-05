@@ -10,10 +10,28 @@
     },
     {
       "title": "Sender IDs",
-      "url": "/sender-ids",
+      "url": "/sender-ids"
+    },
+    {
+      "title": "Finance",
+      "url": "/finance",
       "items": [
-        { "title": "All Sender IDs", "url": "/sender-ids/all" },
-        { "title": "Approvals", "url": "/sender-ids/approvals" }
+        {
+          "title": "Overview",
+          "url": "/finance"
+        },
+        {
+          "title": "Invoices",
+          "url": "/finance/invoices"
+        },
+        {
+          "title": "Transactions",
+          "url": "/finance/transactions"
+        },
+        {
+          "title": "Client Balances",
+          "url": "/finance/balances"
+        }
       ]
     },
     {

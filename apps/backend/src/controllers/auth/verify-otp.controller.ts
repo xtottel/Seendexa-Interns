@@ -1,9 +1,11 @@
 // controllers/auth/verify-otp.controller.ts
 import { prisma } from "@/utils/prisma";
 import { OTPService } from "../../lib/otp-service";
-
+// In your verify-otp.controller.ts - add debug logs
 export const verifyOTP = async ({ body, jwt, set, cookie }: any) => {
   const { phone, otp } = body;
+
+  console.log("🔐 OTP Verification Request:", { phone, otp });
 
   if (!phone || !otp) {
     set.status = 400;
@@ -13,6 +15,7 @@ export const verifyOTP = async ({ body, jwt, set, cookie }: any) => {
   try {
     // Verify OTP with Sendexa Enhanced API
     const result = await OTPService.verifyOTP(phone, otp);
+    console.log("📞 OTP Service Result:", result);
 
     if (!result.success) {
       set.status = 400;
@@ -40,6 +43,8 @@ export const verifyOTP = async ({ body, jwt, set, cookie }: any) => {
       },
     });
 
+    console.log("👤 User found:", user);
+
     if (!user) {
       set.status = 404;
       return { message: "User not found" };
@@ -53,6 +58,8 @@ export const verifyOTP = async ({ body, jwt, set, cookie }: any) => {
       department: user.department.name,
       type: "access"
     });
+
+    console.log("🎫 Access Token Created:", accessToken ? "Yes" : "No");
 
     // Create refresh token
     const refreshToken = await jwt.sign({
@@ -79,6 +86,8 @@ export const verifyOTP = async ({ body, jwt, set, cookie }: any) => {
       sameSite: "strict",
     });
 
+    console.log("✅ Login successful, returning response");
+
     set.status = 200;
     return {
       success: true,
@@ -91,40 +100,10 @@ export const verifyOTP = async ({ body, jwt, set, cookie }: any) => {
         role: user.role,
         department: user.department,
       },
-      token: accessToken,
+      token: accessToken, // Make sure this is included!
     };
   } catch (error: any) {
-    console.error("OTP Verification Error:", error);
-    
-    // Handle specific verification errors
-    if (error.message.includes("Invalid OTP")) {
-      set.status = 400;
-      return { 
-        message: "Invalid verification code",
-        errorType: "INVALID_OTP"
-      };
-    }
-    
-    if (error.message.includes("expired")) {
-      set.status = 400;
-      return { 
-        message: "Verification code has expired",
-        errorType: "EXPIRED_OTP"
-      };
-    }
-    
-    if (error.message.includes("Maximum validation attempts")) {
-      set.status = 400;
-      return { 
-        message: "Too many failed attempts. Please request a new code.",
-        errorType: "MAX_ATTEMPTS_EXCEEDED"
-      };
-    }
-
-    set.status = 400;
-    return { 
-      message: error.message || "OTP verification failed",
-      errorType: "VERIFICATION_FAILED"
-    };
+    console.error("❌ OTP Verification Error:", error);
+    // ... rest of your error handling
   }
 };

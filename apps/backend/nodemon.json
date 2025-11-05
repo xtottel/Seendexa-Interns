@@ -1,0 +1,25 @@
+{
+  "watch": [
+    "controllers/**/*",
+    "routes/**/*",
+    "models/**/*",
+    "plugins/**/*",
+    "utils/**/*",
+    "lib/**/*",
+    "*.ts",
+    "*.json"
+  ],
+  "ignore": [
+    "node_modules/**/*",
+    "dist/**/*",
+    ".git",
+    "*.test.ts",
+    "*.spec.ts"
+  ],
+  "ext": "ts,json",
+  "exec": "bun run index.ts || bun run index.ts",
+  "legacyWatch": true,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

@@ -7,7 +7,7 @@ export const authPlugin = new Elysia()
     jwt({
       name: "jwt",
       secret: Bun.env.JWT_SECRET!,
-      exp: "15m", // Access token expiry
+      exp: "2d", // Access token expiry
     })
   )
   .use(

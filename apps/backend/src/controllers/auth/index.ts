@@ -4,6 +4,7 @@ import { verifyOTP } from "./verify-otp.controller";
 import { resendOTP } from "./resend-otp.controller";
 import { refresh } from "./refresh.controller";
 import { logout } from "./logout.controller";
+import { validate } from "./validate.controller";
 
 export const authController = {
   requestOTP,
@@ -11,4 +12,5 @@ export const authController = {
   resendOTP,
   refresh,
   logout,
+  validate,
 };

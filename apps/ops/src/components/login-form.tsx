@@ -1,187 +1,199 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Update your login-form.tsx
-"use client"
+"use client";
 
-import { useState } from "react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Lock } from "lucide-react"
-import { OTPInput } from "@/components/otp-input"
-import { toast } from "sonner"
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Lock } from "lucide-react";
+import { OTPInput } from "@/components/otp-input";
+import { toast } from "sonner";
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
-  const [step, setStep] = useState<"phone" | "otp">("phone")
-  const [phone, setPhone] = useState("")
-  const [otp, setOtp] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [resendLoading, setResendLoading] = useState(false)
+export function LoginForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
 
     try {
       const res = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
-      })
+      });
 
-      const data = await res.json()
-      
+      const data = await res.json();
+
       if (!res.ok) {
         // Handle specific error types with Sonner toasts
         if (data.errorType === "OTP_ALREADY_ACTIVE") {
           toast.error("OTP Already Sent", {
-            description: "An OTP was recently sent. Please wait or try again shortly."
-          })
+            description:
+              "An OTP was recently sent. Please wait or try again shortly.",
+          });
         } else if (data.errorType === "SENDER_ID_ERROR") {
           toast.error("Service Unavailable", {
-            description: "Service temporarily unavailable. Please try again later."
-          })
-        } else if (data.errorType === "AUTH_CONFIG_ERROR" || data.errorType === "SERVICE_CONFIG_ERROR") {
+            description:
+              "Service temporarily unavailable. Please try again later.",
+          });
+        } else if (
+          data.errorType === "AUTH_CONFIG_ERROR" ||
+          data.errorType === "SERVICE_CONFIG_ERROR"
+        ) {
           toast.error("Configuration Error", {
-            description: "Service configuration error. Please contact support."
-          })
+            description: "Service configuration error. Please contact support.",
+          });
         } else {
           toast.error("Failed to Send OTP", {
-            description: data.message || "Failed to send verification code"
-          })
+            description: data.message || "Failed to send verification code",
+          });
         }
-        return
+        return;
       }
-      
-      setStep("otp")
+
+      setStep("otp");
       toast.success("Verification Code Sent", {
-        description: "We've sent a 6-digit code to your phone number."
-      })
+        description: "We've sent a 6-digit code to your phone number.",
+      });
     } catch (err: any) {
       toast.error("Network Error", {
-        description: "Please check your internet connection and try again."
-      })
+        description: "Please check your internet connection and try again.",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (otp.length !== 6) {
       toast.error("Invalid Code", {
-        description: "Please enter the complete 6-digit code."
-      })
-      return
+        description: "Please enter the complete 6-digit code.",
+      });
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
+      console.log("📤 Sending OTP verification request...");
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
-      })
+      });
 
-      const data = await res.json()
-      
+      const data = await res.json();
+
+      console.log("📥 OTP verification response:", {
+        status: res.status,
+        ok: res.ok,
+        data: data,
+      });
+
       if (!res.ok) {
-        // Handle specific verification errors with Sonner toasts
-        if (data.errorType === "INVALID_OTP") {
-          toast.error("Invalid Code", {
-            description: "The code you entered is incorrect. Please try again."
-          })
-        } else if (data.errorType === "EXPIRED_OTP") {
-          toast.error("Code Expired", {
-            description: "This code has expired. Please request a new one."
-          })
-        } else if (data.errorType === "MAX_ATTEMPTS_EXCEEDED") {
-          toast.error("Too Many Attempts", {
-            description: "Too many failed attempts. Please request a new code."
-          })
-        } else {
-          toast.error("Verification Failed", {
-            description: data.message || "Unable to verify your code"
-          })
-        }
-        return
+        // ... your existing error handling
+        return;
       }
-      
-      // Save token to localStorage/sessionStorage
+
+      // ✅ FIX: Save token to COOKIES (for proxy) AND localStorage (for client)
       if (data.token) {
-        localStorage.setItem('auth_token', data.token)
-        sessionStorage.setItem('auth_token', data.token)
+        // Save to localStorage (for client-side use)
+        localStorage.setItem("auth_token", data.token);
+        sessionStorage.setItem("auth_token", data.token);
+
+        // ✅ CRITICAL: Save to cookies for proxy access
+        document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; secure=${process.env.NODE_ENV === "production"}; sameSite=lax`;
+        document.cookie = `sessionToken=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; secure=${process.env.NODE_ENV === "production"}; sameSite=lax`;
+
+        console.log("✅ Token saved to cookies and localStorage");
       }
-      
+
       toast.success("Login Successful", {
-        description: "Welcome back! Redirecting to your dashboard..."
-      })
-      
-      // Redirect to dashboard or home page
+        description: "Welcome back! Redirecting to your dashboard...",
+      });
+
+      // Get redirect URL from query parameters or default to /home
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get("redirect") || "/home";
+
+      console.log("🔄 Redirecting to:", redirectTo);
+
       setTimeout(() => {
-        window.location.href = "/"
-      }, 1500)
+        window.location.href = redirectTo;
+      }, 1500);
     } catch (err: any) {
+      console.error("❌ Network error during OTP verification:", err);
       toast.error("Network Error", {
-        description: "Please check your connection and try again."
-      })
+        description: "Please check your connection and try again.",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleResendOtp() {
-    setResendLoading(true)
+    setResendLoading(true);
 
     try {
       const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
-      })
+      });
 
-      const data = await res.json()
-      
+      const data = await res.json();
+
       if (!res.ok) {
         if (data.errorType === "RESEND_COOLDOWN") {
           toast.error("Please Wait", {
-            description: "Please wait before requesting a new code."
-          })
+            description: "Please wait before requesting a new code.",
+          });
         } else {
           toast.error("Resend Failed", {
-            description: data.message || "Failed to resend verification code"
-          })
+            description: data.message || "Failed to resend verification code",
+          });
         }
-        return
+        return;
       }
-      
+
       // Clear previous OTP when resending
-      setOtp("")
-      
+      setOtp("");
+
       toast.success("New Code Sent", {
-        description: "We've sent a new verification code to your phone."
-      })
+        description: "We've sent a new verification code to your phone.",
+      });
     } catch (err: any) {
       toast.error("Network Error", {
-        description: "Failed to resend code. Please try again."
-      })
+        description: "Failed to resend code. Please try again.",
+      });
     } finally {
-      setResendLoading(false)
+      setResendLoading(false);
     }
   }
 
@@ -199,6 +211,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
           {step === "phone" ? (
             <form onSubmit={handleSendOtp}>
               <FieldGroup>
+                {/* email */}
                 <Field>
                   <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
                   <Input
@@ -210,19 +223,19 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                     required
                     disabled={loading}
                   />
-                  <FieldDescription>
+                  {/* <FieldDescription>
                     Enter your registered phone number
-                  </FieldDescription>
+                  </FieldDescription> */}
                 </Field>
                 <Field>
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Sending...
+                        Logging in...
                       </>
                     ) : (
-                      "Send Verification Code"
+                      "Login Exahub"
                     )}
                   </Button>
                 </Field>
@@ -232,19 +245,25 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
             <form onSubmit={handleVerifyOtp}>
               <FieldGroup>
                 <Field>
-                  <FieldLabel>Enter Verification Code</FieldLabel>
+                  <FieldLabel>
+                    Enter the 6-digit code sent to {phone}
+                  </FieldLabel>
+                  {/* <FieldDescription className="text-center mt-4">
+                    Enter the 6-digit code sent to {phone}
+                  </FieldDescription> */}
                   <OTPInput
                     value={otp}
                     onChange={setOtp}
                     length={6}
                     disabled={loading}
                   />
-                  <FieldDescription className="text-center mt-4">
-                    Enter the 6-digit code sent to {phone}
-                  </FieldDescription>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={loading || otp.length !== 6} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={loading || otp.length !== 6}
+                    className="w-full"
+                  >
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -267,19 +286,19 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                       {resendLoading ? "Resending..." : "Resend"}
                     </button>
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  {/* <p className="text-sm text-muted-foreground">
                     Or{" "}
                     <button
                       type="button"
                       onClick={() => {
-                        setStep("phone")
-                        setOtp("") // Clear OTP when going back
+                        setStep("phone");
+                        setOtp(""); // Clear OTP when going back
                       }}
                       className="underline underline-offset-4 hover:text-primary"
                     >
                       change phone number
                     </button>
-                  </p>
+                  </p> */}
                 </div>
               </FieldGroup>
             </form>
@@ -297,5 +316,5 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         </p>
       </FieldDescription>
     </div>
-  )
+  );
 }

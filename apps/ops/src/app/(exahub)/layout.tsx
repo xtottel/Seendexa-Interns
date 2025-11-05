@@ -1,17 +1,55 @@
 
-// app/docs/layout.tsx
+// app/ops/layout.tsx
+"use client";
 import type React from "react";
 //import { AppSidebar } from "@/layout/app-sidebar";
 import { AppSidebar } from "@/layout/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DesktopHeader } from "@/layout/desktop-header";
 import { MobileHeader } from "@/layout/mobile-header";
+import { useAuth } from '@/hooks/useAuth'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import Image from 'next/image'
 
-export default function DocsLayout({
+
+export default function DashLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  const { user, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login')
+    }
+  }, [user, loading, router])
+
+
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        {/* Using a loading GIF */}
+        <Image
+          src="/exaloader.gif"
+          alt="Loading..."
+          width={100}
+          height={100}
+          className="mb-4"
+        />
+      </div>
+    )
+  }
+ 
+
+  if (!user) {
+    return null
+  }
+
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full flex bg-background">

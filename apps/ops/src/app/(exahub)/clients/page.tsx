@@ -1,215 +1,250 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/dashboard/operations/clients/page.tsx
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Eye, Mail, Phone, Building, CreditCard, Users, Filter, Download,  Activity, Ban, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Search,
+  MoreHorizontal,
+  Eye,
+  Mail,
+  Phone,
+  Building,
+  CreditCard,
+  Users,
+  Filter,
+  Download,
+  Activity,
+  Ban,
+  CheckCircle,
+  AlertCircle,
+  User,
+  MessageSquare,
+  Key,
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
-// Enhanced mock data following your schema
-const mockClients = [
-  {
-    id: "1",
-    name: "Tech Solutions Ltd",
-    email: "contact@techsolutions.com",
-    phone: "+233 24 123 4567",
-    address: "123 Tech Street, Accra",
-    businessType: "Technology",
-    businessSector: "IT Services",
-    description: "Leading technology solutions provider",
-    website: "https://techsolutions.com",
-    isActive: true,
-    status: "verified",
-    createdAt: new Date("2024-01-15"),
-    lastActive: new Date("2024-06-15"),
-    users: [
-      { 
-        firstName: "John", 
-        lastName: "Doe", 
-        email: "john@techsolutions.com", 
-        role: { name: "Admin" }, 
-        lastLogin: new Date("2024-06-15"),
-        isActive: true 
-      }
-    ],
-    accounts: [{ balance: 1500.75, currency: "GHS", type: "WALLET" }, { balance: 3000, currency: "GHS",  type: "SMS" }],
-    _count: {
-      users: 3,
-      smsMessages: 1250,
-      otpMessages: 320,
-      apiKeys: 2,
-      webhooks: 1,
-      senderIds: 2,
-      templates: 5,
-      contactGroups: 3
-    },
-    settings: {
-      mfaRequired: true,
-      sessionTimeout: 1440,
-      maxLoginAttempts: 5,
-      securityLevel: "ENHANCED"
-    },
-    senderIds: [
-      { name: "TechSol", status: "approved" },
-      { name: "TSolutions", status: "pending" }
-    ],
-    invoices: [
-      { amount: 500, status: "paid", date: new Date("2024-06-01") },
-      { amount: 750, status: "paid", date: new Date("2024-05-01") }
-    ]
-  },
-  {
-    id: "2",
-    name: "Retail Plus GH",
-    email: "info@retailplus.com",
-    phone: "+233 20 987 6543",
-    address: "45 Market Circle, Kumasi",
-    businessType: "Retail",
-    businessSector: "E-commerce",
-    description: "Online retail store",
-    website: "https://retailplusgh.com",
-    isActive: true,
-    status: "pending",
-    createdAt: new Date("2024-02-20"),
-    lastActive: new Date("2024-06-14"),
-    users: [
-      { 
-        firstName: "Sarah", 
-        lastName: "Mensah", 
-        email: "sarah@retailplus.com", 
-        role: { name: "Owner" }, 
-        lastLogin: new Date("2024-06-14"),
-        isActive: true 
-      }
-    ],
-    accounts: [{ balance: 750.25, currency: "GHS", type: "WALLET" }, { balance: 1200, currency: "GHS", type: "SMS" }],
-    _count: {
-      users: 2,
-      smsMessages: 850,
-      otpMessages: 150,
-      apiKeys: 1,
-      webhooks: 0,
-      senderIds: 1,
-      templates: 2,
-      contactGroups: 1
-    },
-    settings: {
-      mfaRequired: false,
-      sessionTimeout: 1440,
-      maxLoginAttempts: 5,
-      securityLevel: "STANDARD"
-    },
-    senderIds: [
-      { name: "RetailPlus", status: "approved" }
-    ],
-    invoices: [
-      { amount: 300, status: "paid", date: new Date("2024-06-05") }
-    ]
-  },
-  {
-    id: "3",
-    name: "Logistics Express",
-    email: "support@logisticsexpress.com",
-    phone: "+233 54 555 1234",
-    address: "78 Transport Ave, Tema",
-    businessType: "Logistics",
-    businessSector: "Transportation",
-    description: "Nationwide logistics and delivery",
-    website: "https://logisticsexpress.com",
-    isActive: false,
-    status: "suspended",
-    createdAt: new Date("2024-03-10"),
-    lastActive: new Date("2024-05-01"),
-    users: [
-      { 
-        firstName: "Kwame", 
-        lastName: "Appiah", 
-        email: "kwame@logisticsexpress.com", 
-        role: { name: "Manager" }, 
-        lastLogin: new Date("2024-05-01"),
-        isActive: false 
-      }
-    ],
-    accounts: [{ balance: 0, currency: "GHS", type: "WALLET" }, { balance: 0, currency: "GHS", type: "SMS" }],
-    _count: {
-      users: 1,
-      smsMessages: 0,
-      otpMessages: 0,
-      apiKeys: 0,
-      webhooks: 0,
-      senderIds: 0,
-      templates: 0,
-      contactGroups: 0
-    },
-    settings: {
-      mfaRequired: false,
-      sessionTimeout: 1440,
-      maxLoginAttempts: 5,
-      securityLevel: "STANDARD"
-    },
-    senderIds: [],
-    invoices: []
-  }
-];
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  businessType?: string;
+  businessSector?: string;
+  description?: string;
+  website?: string;
+  isActive: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  lastActive: string;
+  primaryUser?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    lastLogin: string;
+    isActive: boolean;
+  };
+  walletBalance: number;
+  smsBalance: number;
+  stats: {
+    users: number;
+    smsMessages: number;
+    otpMessages: number;
+    apiKeys: number;
+    webhooks: number;
+    senderIds: number;
+    templates: number;
+    contactGroups: number;
+  };
+}
+
+interface Stats {
+  total: number;
+  active: number;
+  inactive: number;
+  verified: number;
+  pending: number;
+  totalBalance: number;
+  totalSmsSent: number;
+}
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [clients] = useState(mockClients);
-
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "active" && client.isActive) ||
-      (statusFilter === "inactive" && !client.isActive) ||
-      (statusFilter === "verified" && client.status === "verified") ||
-      (statusFilter === "pending" && client.status === "pending");
-
-    return matchesSearch && matchesStatus;
+  const [clients, setClients] = useState<Client[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    verified: 0,
+    pending: 0,
+    totalBalance: 0,
+    totalSmsSent: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
   });
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(date);
+  useEffect(() => {
+    fetchClients();
+    fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, searchTerm, pagination.page]);
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (searchTerm) params.append("search", searchTerm);
+      params.append("page", pagination.page.toString());
+      params.append("limit", pagination.limit.toString());
+
+      const response = await fetch(`/api/clients?${params}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setClients(result.data);
+        setPagination((prev) => ({
+          ...prev,
+          ...result.pagination,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const fetchStats = async () => {
+    try {
+      const response = await fetch("/api/clients/stats");
+      const result = await response.json();
+
+      if (result.success) {
+        setStats(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    }
+  };
+
+  const handleToggleStatus = async (client: Client) => {
+    try {
+      const response = await fetch(`/api/clients/${client.id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isActive: !client.isActive,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh the data
+        fetchClients();
+        fetchStats();
+      } else {
+        console.error("Failed to update status:", result.message);
+        alert(`Failed to update status: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating client status:", error);
+      alert("Error updating client status");
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchClients();
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(dateString));
+  };
+
+  const formatCurrency = (amount: number, currency: string = "GHS") => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
     }).format(amount);
   };
 
-  const getStatusBadge = (client: any) => {
+  const getStatusBadge = (client: Client) => {
     if (!client.isActive) {
-      return <Badge variant="destructive" className="flex items-center gap-1"><Ban className="h-3 w-3" /> Suspended</Badge>;
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <Ban className="h-3 w-3" /> Suspended
+        </Badge>
+      );
     }
-    
+
     switch (client.status) {
       case "verified":
-        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Verified</Badge>;
+        return (
+          <Badge variant="default" className="flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" /> Verified
+          </Badge>
+        );
       case "pending":
-        return <Badge variant="secondary" className="flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Pending</Badge>;
+        return (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" /> Pending
+          </Badge>
+        );
+      case "active":
+        return (
+          <Badge variant="default" className="flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" /> Active
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return <Badge variant="outline">{client.status}</Badge>;
     }
   };
 
-  const handleToggleStatus = (client: any) => {
-    // Implement status toggle logic
-    console.log("Toggle status for:", client.id);
+  const handlePageChange = (newPage: number) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -217,7 +252,9 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Client Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Client Management
+          </h1>
           <p className="text-muted-foreground">
             Manage business clients, monitor activity, and handle account status
           </p>
@@ -227,10 +264,10 @@ export default function ClientsPage() {
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          {/* <Button>
+          <Button>
             <User className="w-4 h-4 mr-2" />
             Add Client
-          </Button> */}
+          </Button>
         </div>
       </div>
 
@@ -242,9 +279,9 @@ export default function ClientsPage() {
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{clients.length}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              {clients.filter(c => c.isActive).length} active
+              {stats.active} active, {stats.inactive} suspended
             </p>
           </CardContent>
         </Card>
@@ -256,7 +293,7 @@ export default function ClientsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(clients.reduce((acc, client) => acc + (client.accounts[0]?.balance || 0), 0))}
+              {formatCurrency(stats.totalBalance)}
             </div>
             <p className="text-xs text-muted-foreground">Across all accounts</p>
           </CardContent>
@@ -265,11 +302,11 @@ export default function ClientsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">SMS Volume</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {clients.reduce((acc, client) => acc + client._count.smsMessages, 0).toLocaleString()}
+              {stats.totalSmsSent.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">Total messages sent</p>
           </CardContent>
@@ -277,14 +314,81 @@ export default function ClientsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sender IDs</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Sender IDs
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {clients.reduce((acc, client) => acc + client._count.senderIds, 0)}
+              {clients.reduce((acc, client) => acc + client.stats.senderIds, 0)}
             </div>
-            <p className="text-xs text-muted-foreground">Registered sender IDs</p>
+            <p className="text-xs text-muted-foreground">
+              Registered sender IDs
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total SMS Sent
+            </CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {clients
+                .reduce((acc, client) => acc + client.stats.smsMessages, 0)
+                .toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total OTP Messages
+            </CardTitle>
+            <Key className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {clients
+                .reduce((acc, client) => acc + client.stats.otpMessages, 0)
+                .toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Active Templates
+            </CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {clients.reduce((acc, client) => acc + client.stats.templates, 0)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Contact Groups
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {clients.reduce(
+                (acc, client) => acc + client.stats.contactGroups,
+                0
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -300,15 +404,20 @@ export default function ClientsPage() {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients..."
-                  className="pl-8 w-full sm:w-64"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search clients..."
+                    className="pl-8 w-full sm:w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" variant="outline">
+                  Search
+                </Button>
+              </form>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
@@ -317,128 +426,236 @@ export default function ClientsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setStatusFilter("all")}>All Clients</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("active")}>Active</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("inactive")}>Suspended</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("verified")}>Verified</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("pending")}>Pending</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                    All Clients
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("active")}>
+                    Active
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("inactive")}>
+                    Suspended
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("verified")}>
+                    Verified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("pending")}>
+                    Pending
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Business</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Balance</TableHead>
-                <TableHead>SMS Credits</TableHead>
-                <TableHead>Users</TableHead>
-                <TableHead>Activity</TableHead>
-               
-                <TableHead>Status</TableHead>
-                <TableHead >Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClients.map((client) => (
-                <TableRow key={client.id} className={!client.isActive ? "bg-muted/50" : ""}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{client.name}</span>
-                      
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col space-y-1">
-                    
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{client.phone}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {/* <CreditCard className="h-4 w-4 text-muted-foreground" /> */}
-                      <span className={`font-medium ${client.accounts[0]?.balance === 0 ? "text-muted-foreground" : ""}`}>
-                        {formatCurrency(client.accounts[0]?.balance || 0)}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{client.accounts[1]?.balance || 0} </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{client._count.users}</span>
-                      
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      
-                      <span className="text-xs text-muted-foreground">
-                        Last active: {formatDate(client.lastActive)}
-                      </span>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell>
-                    {getStatusBadge(client)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/clients/${client.id}`} className="cursor-pointer flex items-center">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        
-                        <DropdownMenuItem 
-                          className="cursor-pointer"
-                          onClick={() => handleToggleStatus(client)}
-                        >
-                          {client.isActive ? (
-                            <>
-                              <Ban className="h-4 w-4 mr-2" />
-                              Suspend Account
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Activate Account
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {filteredClients.length === 0 && (
-            <div className="text-center py-8">
-              <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No clients found matching your criteria</p>
+          {loading ? (
+            // <div className="text-center py-8">
+            //   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            //   <p className="text-muted-foreground mt-2">Loading clients...</p>
+            // </div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+              {/* Using a loading GIF */}
+              <Image
+                src="/exaloader.gif"
+                alt="Loading..."
+                width={100}
+                height={100}
+                className="mb-4"
+              />
             </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Business</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Wallet Balance</TableHead>
+                    <TableHead>SMS Credits</TableHead>
+                    <TableHead>Users</TableHead>
+                    <TableHead>Activity</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow
+                      key={client.id}
+                      className={!client.isActive ? "bg-muted/50" : ""}
+                    >
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{client.name}</span>
+                          {/* <div className="flex items-center gap-1 mt-1">
+                            <Globe className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {client.businessType || "No type specified"}
+                            </span>
+                          </div> */}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col space-y-1">
+                          {/* <div className="flex items-center gap-2">
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{client.email}</span>
+                          </div> */}
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{client.phone}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <span
+                            className={`font-medium ${client.walletBalance === 0 ? "text-muted-foreground" : "text-green-600"}`}
+                          >
+                            {formatCurrency(client.walletBalance)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                          <span
+                            className={
+                              client.smsBalance === 0
+                                ? "text-muted-foreground"
+                                : "text-blue-600"
+                            }
+                          >
+                            {client.smsBalance.toLocaleString()}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{client.stats.users}</span>
+                          {client.stats.apiKeys > 0 && (
+                            <Badge variant="outline" className="ml-1">
+                              <Key className="h-3 w-3 mr-1" />
+                              {client.stats.apiKeys}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          {/* <span className="text-sm">
+                            {client.stats.smsMessages.toLocaleString()} SMS
+                          </span> */}
+                          <span className="text-xs text-muted-foreground">
+                            Last active: {formatDate(client.lastActive)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(client)}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/clients/${client.id}`}
+                                className="cursor-pointer flex items-center"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => handleToggleStatus(client)}
+                            >
+                              {client.isActive ? (
+                                <>
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  Suspend Account
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Activate Account
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer">
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Email
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              {pagination.pages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total
+                    )}{" "}
+                    of {pagination.total} clients
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page === pagination.pages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {clients.length === 0 && (
+                <div className="text-center py-12">
+                  <Building className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium">No clients found</h3>
+                  <p className="text-muted-foreground mt-2">
+                    {searchTerm || statusFilter !== "all"
+                      ? "Try adjusting your search or filter criteria"
+                      : "No clients have been registered yet"}
+                  </p>
+                  {(searchTerm || statusFilter !== "all") && (
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setStatusFilter("all");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
