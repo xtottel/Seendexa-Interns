@@ -1,6 +1,6 @@
 // src/routes/finance/index.ts - UPDATED
 import { Elysia, t } from "elysia";
-import { financeController } from "@/controllers/finance";
+import { financeController } from "../controllers/finance";
 
 export const financeRoutes = new Elysia({ prefix: "/api/finance" })
   // Overview endpoints

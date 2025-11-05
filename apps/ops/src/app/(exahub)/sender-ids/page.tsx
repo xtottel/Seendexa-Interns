@@ -252,6 +252,7 @@ export default function SenderIdsPage() {
         </div>
           ) : (
             <>
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -331,6 +332,7 @@ export default function SenderIdsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {senderIds.length === 0 && (
                 <div className="text-center py-8">
@@ -338,6 +340,7 @@ export default function SenderIdsPage() {
                   <p className="text-muted-foreground">No sender IDs found</p>
                 </div>
               )}
+
             </>
           )}
         </CardContent>

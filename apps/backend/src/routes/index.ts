@@ -6,11 +6,13 @@ import { senderIdsRoutes } from "./sender-ids"; // Make sure this import exists
 import { healthRoutes } from "./health"; // Add this import
 import { clientsRoutes } from "./clients"; // Ensure clientsRoutes is imported
 import { financeRoutes } from "./finance";
+import { smsRoutes } from "./sms";
 
 export const routes = new Elysia()
   .use(authRoutes)
-  .use(userRoutes) 
+  .use(userRoutes)
   .use(senderIdsRoutes) // Make sure this line is present
   .use(healthRoutes) // Add this line
   .use(clientsRoutes) // Ensure clientsRoutes is used
-.use(financeRoutes)
+  .use(financeRoutes)
+  .use(smsRoutes);

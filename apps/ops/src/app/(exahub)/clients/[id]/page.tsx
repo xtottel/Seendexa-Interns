@@ -779,6 +779,7 @@ export default function ClientDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -819,6 +820,7 @@ export default function ClientDetailPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

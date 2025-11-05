@@ -1,4 +1,4 @@
-// app/dashboard/operations/sms-history/page.tsx
+// app/dashboard/operations/sms-monitoring/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,146 +8,163 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Filter, Download, Mail, Eye, RefreshCw, Building, MessageSquare, CreditCard, Activity } from "lucide-react";
+import { Search, MoreHorizontal, Download, Mail, Eye, RefreshCw, MessageSquare, CreditCard, Activity } from "lucide-react";
 
-// Mock data based on your SmsMessage schema
-const mockSmsMessages = [
-  {
-    id: "1",
-    recipient: "+233 24 123 4567",
-    message: "Your OTP code is 123456",
-    type: "SMS API",
-    status: "delivered",
-    cost: 0.05,
-    senderId: "1",
-    sender: { name: "TechSol" },
-    business: {
-      id: "1",
-      name: "Tech Solutions Ltd",
-      email: "contact@techsolutions.com"
-    },
-    messageId: "msg_001",
-    externalId: "nalo_001",
-    errorCode: null,
-    errorMessage: null,
-    createdAt: new Date("2024-06-15T10:30:00"),
-    updatedAt: new Date("2024-06-15T10:30:00")
-  },
-  {
-    id: "2",
-    recipient: "+233 20 987 6543",
-    message: "Welcome to our service! Get started now.",
-    type: "Outgoing",
-    status: "failed",
-    cost: 0.05,
-    senderId: "2",
-    sender: { name: "RetailPlus" },
-    business: {
-      id: "2",
-      name: "Retail Plus GH",
-      email: "info@retailplus.com"
-    },
-    messageId: "msg_002",
-    externalId: null,
-    errorCode: "INVALID_NUMBER",
-    errorMessage: "Invalid phone number format",
-    createdAt: new Date("2024-06-15T09:15:00"),
-    updatedAt: new Date("2024-06-15T09:15:00")
-  },
-  {
-    id: "3",
-    recipient: "+233 54 555 1234",
-    message: "Your delivery is arriving today between 2-4 PM",
-    type: "SMS API RESEND",
-    status: "resent_delivered",
-    cost: 0.05,
-    senderId: "3",
-    sender: { name: "LogisticsExp" },
-    business: {
-      id: "3",
-      name: "Logistics Express",
-      email: "support@logisticsexpress.com"
-    },
-    messageId: "msg_003",
-    externalId: "nalo_003",
-    errorCode: null,
-    errorMessage: null,
-    parentSmsId: "3_original",
-    resentAt: new Date("2024-06-15T08:45:00"),
-    createdAt: new Date("2024-06-15T08:30:00"),
-    updatedAt: new Date("2024-06-15T08:45:00")
-  },
-  {
-    id: "4",
-    recipient: "+233 27 888 9999",
-    message: "Special offer: 20% off all items this weekend!",
-    type: "SMS API",
-    status: "pending",
-    cost: 0.05,
-    senderId: "4",
-    sender: { name: "MediCare" },
-    business: {
-      id: "5",
-      name: "MediCare Health Services",
-      email: "admin@medicare.com"
-    },
-    messageId: "msg_004",
-    externalId: null,
-    errorCode: null,
-    errorMessage: null,
-    createdAt: new Date("2024-06-15T07:20:00"),
-    updatedAt: new Date("2024-06-15T07:20:00")
-  },
-  {
-    id: "5",
-    recipient: "+233 54 333 4444",
-    message: "Payment confirmed. Transaction ID: TXN789012",
-    type: "Outgoing",
-    status: "delivered",
-    cost: 0.05,
-    senderId: "5",
-    sender: { name: "QuickPay" },
-    business: {
-      id: "4",
-      name: "QuickPay Financial",
-      email: "support@quickpay.com"
-    },
-    messageId: "msg_005",
-    externalId: "nalo_005",
-    errorCode: null,
-    errorMessage: null,
-    createdAt: new Date("2024-06-14T16:45:00"),
-    updatedAt: new Date("2024-06-14T16:45:00")
-  }
-];
+interface SmsMessage {
+  id: string;
+  recipient: string;
+  message: string;
+  type: string;
+  status: string;
+  cost: number;
+  senderId: string;
+  business: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  messageId: string;
+  externalId: string;
+  errorCode: string;
+  errorMessage: string;
+  parentSmsId: string;
+  resentAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export default function SmsHistoryPage() {
+interface SmsStats {
+  total: number;
+  delivered: number;
+  failed: number;
+  pending: number;
+  totalCost: number;
+  recentActivity: number;
+  typeDistribution: Record<string, number>;
+  statusDistribution: Record<string, number>;
+}
+
+interface SmsOverview {
+  totalSent: number;
+  delivered: number;
+  failed: number;
+  pending: number;
+  deliveryRate: number;
+  totalCost: number;
+  sentGrowth: number;
+  deliveredGrowth: number;
+}
+
+export default function SmsMonitoringPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [smsMessages, setSmsMessages] = useState(mockSmsMessages);
+  const [smsMessages, setSmsMessages] = useState<SmsMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [smsStats, setSmsStats] = useState<SmsStats | null>(null);
+  const [overview, setOverview] = useState<SmsOverview | null>(null);
 
-  const filteredMessages = smsMessages.filter(message => {
-    const matchesSearch = message.recipient.includes(searchTerm) ||
-      message.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (message.sender?.name && message.sender.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === "all" || message.status === statusFilter;
-    const matchesType = typeFilter === "all" || message.type === typeFilter;
+  useEffect(() => {
+    fetchSmsData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  const fetchSmsData = async () => {
+    try {
+      setIsLoading(true);
+      await Promise.all([
+        fetchSmsHistory(),
+        fetchSmsStats(),
+        fetchSmsOverview()
+      ]);
+    } catch (error) {
+      console.error("Error fetching SMS data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const formatDate = (date: Date) => {
+  const fetchSmsOverview = async () => {
+    try {
+      const response = await fetch('/api/sms/analytics/overview?range=month');
+      const result = await response.json();
+      if (result.success) {
+        setOverview(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching SMS overview:", error);
+    }
+  };
+
+  const fetchSmsStats = async () => {
+    try {
+      const response = await fetch('/api/sms/history/stats');
+      const result = await response.json();
+      if (result.success) {
+        setSmsStats(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching SMS stats:", error);
+    }
+  };
+
+  const fetchSmsHistory = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (typeFilter !== 'all') params.append('type', typeFilter);
+      params.append('page', '1');
+      params.append('limit', '50');
+
+      const response = await fetch(`/api/sms/history?${params}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setSmsMessages(result.data);
+      } else {
+        console.error("Failed to fetch SMS history:", result);
+        setSmsMessages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching SMS history:", error);
+      setSmsMessages([]);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchSmsData();
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchSmsHistory();
+  };
+
+  const handleResend = async (message: SmsMessage) => {
+    try {
+      console.log("Resending message:", message.id);
+      // Implement resend logic here
+      // This would call a separate API endpoint to resend the message
+    } catch (error) {
+      console.error("Error resending message:", error);
+    }
+  };
+
+  const handleViewDetails = (message: SmsMessage) => {
+    console.log("View message details:", message.id);
+    // Implement view details logic
+  };
+
+  // Utility functions
+  const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(date);
+    }).format(new Date(dateString));
   };
 
   const formatCurrency = (amount: number) => {
@@ -161,11 +178,11 @@ export default function SmsHistoryPage() {
     switch (status) {
       case "delivered":
       case "resent_delivered":
-        return <Badge variant="default" className="flex items-center gap-1">Delivered</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Delivered</Badge>;
       case "pending":
-        return <Badge variant="secondary" className="flex items-center gap-1">Pending</Badge>;
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">Processing</Badge>;
       case "failed":
-        return <Badge variant="destructive" className="flex items-center gap-1">Failed</Badge>;
+        return <Badge variant="destructive">Failed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -184,41 +201,23 @@ export default function SmsHistoryPage() {
     }
   };
 
-  const handleRefresh = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const handleResend = (message: any) => {
-    console.log("Resend message:", message.id);
-    // Implement resend logic
-  };
-
-  const handleViewDetails = (message: any) => {
-    console.log("View message details:", message.id);
-    // Implement view details logic
-  };
-
-  // Calculate stats
-  const stats = {
-    total: smsMessages.length,
-    delivered: smsMessages.filter(m => m.status === 'delivered' || m.status === 'resent_delivered').length,
-    failed: smsMessages.filter(m => m.status === 'failed').length,
-    pending: smsMessages.filter(m => m.status === 'pending').length,
-    totalCost: smsMessages.reduce((acc, msg) => acc + msg.cost, 0)
-  };
+  // Stats calculations
+  const totalMessages = smsStats?.total || smsMessages.length;
+  const deliveredMessages = smsStats?.delivered || smsMessages.filter(m => m.status === 'delivered' || m.status === 'resent_delivered').length;
+  const failedMessages = smsStats?.failed || smsMessages.filter(m => m.status === 'failed').length;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const pendingMessages = smsStats?.pending || smsMessages.filter(m => m.status === 'pending').length;
+  const totalCost = smsStats?.totalCost || smsMessages.reduce((acc, msg) => acc + msg.cost, 0);
+  const deliveryRate = overview?.deliveryRate || (totalMessages > 0 ? Math.round((deliveredMessages / totalMessages) * 100) : 0);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">SMS History</h1>
+          <h1 className="text-3xl font-bold tracking-tight">SMS Monitoring</h1>
           <p className="text-muted-foreground">
-            Monitor all SMS messages across all businesses
+            Monitor all individual SMS messages across the platform
           </p>
         </div>
         <div className="flex gap-2">
@@ -233,7 +232,7 @@ export default function SmsHistoryPage() {
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -241,35 +240,35 @@ export default function SmsHistoryPage() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{totalMessages}</div>
             <p className="text-xs text-muted-foreground">
-              All time messages
+              All individual SMS messages
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Delivered</CardTitle>
+            <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
             <Mail className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.delivered}</div>
+            <div className="text-2xl font-bold text-green-600">{deliveryRate}%</div>
             <p className="text-xs text-muted-foreground">
-              Successfully delivered
+              {overview?.deliveredGrowth || 0 >= 0 ? '+' : ''}{overview?.deliveredGrowth || 0}% from last period
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed</CardTitle>
+            <CardTitle className="text-sm font-medium">Failed Messages</CardTitle>
             <Activity className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
+            <div className="text-2xl font-bold text-red-600">{failedMessages}</div>
             <p className="text-xs text-muted-foreground">
-              Delivery failed
+              {totalMessages > 0 ? ((failedMessages / totalMessages) * 100).toFixed(1) : 0}% failure rate
             </p>
           </CardContent>
         </Card>
@@ -280,25 +279,28 @@ export default function SmsHistoryPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalCost)}</div>
+            <div className="text-2xl font-bold">{(totalCost)} Credits</div>
             <p className="text-xs text-muted-foreground">
-              Across all messages
+              Cost of all SMS messages
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
+      {/* SMS Messages Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <CardTitle>SMS Messages</CardTitle>
               <CardDescription>
-                Monitor and manage all SMS messages sent through the platform
+                Monitor and manage all individual SMS messages sent through the platform
+                {searchTerm && ` - Searching for "${searchTerm}"`}
+                {statusFilter !== 'all' && ` - Filtered by ${statusFilter}`}
+                {typeFilter !== 'all' && ` - Filtered by ${typeFilter}`}
               </CardDescription>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -309,97 +311,96 @@ export default function SmsHistoryPage() {
                   disabled={isLoading}
                 />
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto" disabled={isLoading}>
-                    <Filter className="h-4 w-4 mr-2" />
-                    Status
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setStatusFilter("all")}>All Status</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("delivered")}>Delivered</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("pending")}>Pending</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("failed")}>Failed</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("resent_delivered")}>Resent Delivered</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto" disabled={isLoading}>
-                    <Filter className="h-4 w-4 mr-2" />
-                    Type
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setTypeFilter("all")}>All Types</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTypeFilter("SMS API")}>SMS API</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTypeFilter("Outgoing")}>Outgoing</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTypeFilter("SMS API RESEND")}>Resend</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+              <select 
+                className="border rounded-md px-3 py-2 text-sm bg-background"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                disabled={isLoading}
+              >
+                <option value="all">All Status</option>
+                <option value="delivered">Delivered</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="resent_delivered">Resent Delivered</option>
+              </select>
+              <select 
+                className="border rounded-md px-3 py-2 text-sm bg-background"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                disabled={isLoading}
+              >
+                <option value="all">All Types</option>
+                <option value="SMS API">SMS API</option>
+                <option value="Outgoing">Outgoing</option>
+                <option value="SMS API RESEND">Resend</option>
+              </select>
+              <Button type="submit" variant="outline" disabled={isLoading}>
+                Apply Filters
+              </Button>
+            </form>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Business ID</TableHead>
-                <TableHead>Recipient</TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Sender ID</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sent</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMessages.map((message) => (
-                <TableRow key={message.id} className={message.status === 'failed' ? "bg-muted/50" : ""}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{message.business.id}</span>
-                      {/* <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        {message.business.email}
-                      </div> */}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {message.recipient}
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-[100px] truncate" title={message.message}>
-                      {message.message}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getTypeBadge(message.type)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {message.sender?.name || "N/A"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {formatCurrency(message.cost)}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(message.status)}
-                    {message.errorMessage && (
-                      <div className="text-xs text-red-600 mt-1">
-                        {message.errorMessage}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Business</TableHead>
+                  <TableHead>Recipient</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Sender ID</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Sent</TableHead>
+                  <TableHead >Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {smsMessages.map((message) => (
+                  <TableRow key={message.id} className={
+                    message.status === 'failed' ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-muted/50'
+                  }>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{message.business.name}</span>
+                        {/* <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Building className="h-3 w-3" />
+                          {message.business.id}
+                        </div> */}
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(message.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {message.recipient}
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[200px] truncate" title={message.message}>
+                        {message.message}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getTypeBadge(message.type)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {message.senderId}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(message.cost)}
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(message.status)}
+                      {/* {message.errorMessage && (
+                        <div className="text-xs text-red-600 mt-1 max-w-[150px]">
+                          {message.errorMessage}
+                        </div>
+                      )} */}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[150px]">
+                      {formatDate(message.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -427,23 +428,46 @@ export default function SmsHistoryPage() {
                           )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="cursor-pointer">
+                            <Download className="h-4 w-4 mr-2" />
                             Download Report
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          
 
-          {filteredMessages.length === 0 && (
-            <div className="text-center py-8">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No SMS messages found matching your criteria</p>
+          {smsMessages.length === 0 && !isLoading && (
+            <div className="text-center py-12">
+              <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground text-lg">No SMS messages found</p>
+              {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Try adjusting your search criteria or clear filters
+                </p>
+              )}
+              <Button variant="outline" className="mt-4" onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setTypeFilter('all');
+                fetchSmsHistory();
+              }}>
+                Clear Filters
+              </Button>
             </div>
           )}
+
+          {isLoading && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading SMS messages...</p>
+            </div>
+          )}
+
+          </div>
         </CardContent>
       </Card>
     </div>

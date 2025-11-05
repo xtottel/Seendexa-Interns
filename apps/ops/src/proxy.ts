@@ -64,7 +64,7 @@ export async function proxy(request: NextRequest) {
 
     if (isAuthenticated) {
       console.log("✅ Already authenticated, redirecting to ops");
-      return NextResponse.redirect(new URL("/ops", request.url));
+      return NextResponse.redirect(new URL("/home", request.url));
     } else {
       console.log("❌ Invalid token, allowing access to auth route");
       // Clear invalid tokens

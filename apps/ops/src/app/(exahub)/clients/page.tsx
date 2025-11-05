@@ -47,7 +47,7 @@ import {
   Key,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import  Image  from "next/image";
 
 interface Client {
   id: string;
@@ -464,6 +464,7 @@ export default function ClientsPage() {
             </div>
           ) : (
             <>
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -655,6 +656,7 @@ export default function ClientsPage() {
                   )}
                 </div>
               )}
+</div>
             </>
           )}
         </CardContent>

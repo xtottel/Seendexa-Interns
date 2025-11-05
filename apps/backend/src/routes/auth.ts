@@ -1,6 +1,6 @@
 // routes/auth/index.ts
 import { Elysia, t } from "elysia";
-import { authController } from "@/controllers/auth";
+import { authController } from "../controllers/auth";
 
 export const authRoutes = new Elysia({ prefix: "/api/auth" })
   // OTP Login routes
